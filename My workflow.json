@@ -1,0 +1,204 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Hi there! 👋\nI am your Data Analyst Agent. How can I assist you today?",
+        "options": {
+          "inputPlaceholder": "Type your question..",
+          "subtitle": "AI Sales Report Analyzer 📊",
+          "responseMode": "lastNode"
+        }
+      },
+      "id": "b2ed86bb-b5e6-49c5-a2d7-79b269f04883",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        -16
+      ],
+      "webhookId": "5ae77860-9ed0-4441-a7d8-470747876803"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are an AI Sales Report Analyzer.\n\nWhen the user sends a Google Sheets URL in the chat:\n\n1. Use the Google Sheets tool to read the spreadsheet provided in the latest user message.\n2. Always analyze the newly provided spreadsheet, not a previously used spreadsheet.\n3. Identify the available columns and analyze the actual data.\n4. Calculate total sales, average sales, top-selling products, regional performance, and other relevant insights based on the available columns.\n5. Display the analysis clearly in the chat output.\n6. Keep the existing Gmail workflow working as configured.\n7. Never invent results or use old spreadsheet data.\n8. If the spreadsheet cannot be accessed, ask the user to check the URL and sharing permissions.\n\nAlways fetch the latest spreadsheet data before generating the analysis.\n\nWhen sending the report by email (only to the address the user gave in chat):\n- Write the email body as clean HTML, not plain text.\n- Start with a short <h2> title and a one-line summary paragraph.\n- Use <h3> section headings such as Overview, Performance by region or category, Trends, Recommendations.\n- Show totals and comparisons in an HTML <table border=\"1\" cellpadding=\"6\">.\n- Use <ul><li> bullets for insights and recommendations, one point per bullet.\n- Bold key numbers with <b>. Keep sentences short and specific.\n- Never put the whole email in a single line or paragraph."
+        }
+      },
+      "id": "dceb77b2-b5ff-4a02-b5e7-12eb247920e2",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        352,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "7845736b-189c-4754-9109-9b005d7a3fd4",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        96,
+        192
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "id": "b28a95da-cda9-43be-a457-55218c95e410",
+      "name": "Simple Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        272,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Get row(s) in sheet in Google Sheets",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Document', `Use the Google Sheets URL provided by the user in the current chat message. Read data only from that spreadsheet. Do not use the previously selected spreadsheet.`, 'string') }}",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Sheet', `Use the sheet tab ID or sheet name that belongs to the spreadsheet URL provided in the current chat message. Do not use a sheet ID from a previous spreadsheet.`, 'string') }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "5e95de1a-be12-4306-adca-7f8769f7fa72",
+      "name": "Get row(s) in sheet in Google Sheets",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        432,
+        176
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "p7Wb9SecR6Sn4tci",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $fromAI('recipient_email', 'Recipient email address, exactly as the user typed it in the chat') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('email_subject', 'Subject line of the email') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('email_body', 'Full email body as well-formatted HTML. Use h2 and h3 headings, p paragraphs, ul and li bullet lists, a table with border=1 cellpadding=6 for numbers, and b for key figures. Never write it as one run-on line.') }}",
+        "options": {}
+      },
+      "id": "4bf73d4e-7fec-472f-93db-94c4b000cb35",
+      "name": "send_email",
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        592,
+        192
+      ],
+      "webhookId": "877760a3-d00f-439a-b559-f474c26366b9",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "UntO6YafQOg7BuER",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "send_email": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f474cd76-ea3c-4553-8aeb-7975e5b08d2e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c9a9cc9c3fac85be82e05555d57546f1aa753f1856c6b85e3f9aad1fb2ba578f"
+  },
+  "nodeGroups": [],
+  "id": "aLMgB3ZjREadjBi5",
+  "tags": []
+}
